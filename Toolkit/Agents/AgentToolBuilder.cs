@@ -39,17 +39,8 @@ namespace UnityAI.Toolkit.Agents
                 }
 
                 List<ToolParam> toolParams = BuildParamList(method);
-
-                if (isAsync)
-                {
-                    Func<Dictionary<string, object>, Task<string>> asyncHandler = BuildAsyncHandler(target, method);
-                    tools.Add(new AgentTool(toolAttr.Name, toolAttr.Description, toolParams, asyncHandler));
-                }
-                else
-                {
-                    Func<Dictionary<string, object>, string> handler = BuildHandler(target, method);
-                    tools.Add(new AgentTool(toolAttr.Name, toolAttr.Description, toolParams, handler));
-                }
+                Func<Dictionary<string, object>, Task<string>> handler = BuildHandler(target, method, isAsync);
+                tools.Add(new AgentTool(toolAttr.Name, toolAttr.Description, toolParams, handler));
             }
 
             return tools;
@@ -93,25 +84,24 @@ namespace UnityAI.Toolkit.Agents
             return (ToolParamAtomicTypes)(-1);
         }
 
-        private static Func<Dictionary<string, object>, string> BuildHandler(object target, MethodInfo method)
+        private static Func<Dictionary<string, object>, Task<string>> BuildHandler(object target, MethodInfo method, bool isAsync)
         {
             ParameterInfo[] parameters = method.GetParameters();
+
+            if (isAsync)
+            {
+                return (Dictionary<string, object> args) =>
+                {
+                    object[] invokeArgs = BuildInvokeArgs(parameters, args);
+                    return (Task<string>)method.Invoke(target, invokeArgs);
+                };
+            }
 
             return (Dictionary<string, object> args) =>
             {
                 object[] invokeArgs = BuildInvokeArgs(parameters, args);
-                return (string)method.Invoke(target, invokeArgs);
-            };
-        }
-
-        private static Func<Dictionary<string, object>, Task<string>> BuildAsyncHandler(object target, MethodInfo method)
-        {
-            ParameterInfo[] parameters = method.GetParameters();
-
-            return (Dictionary<string, object> args) =>
-            {
-                object[] invokeArgs = BuildInvokeArgs(parameters, args);
-                return (Task<string>)method.Invoke(target, invokeArgs);
+                string result = (string)method.Invoke(target, invokeArgs);
+                return Task.FromResult(result);
             };
         }
 

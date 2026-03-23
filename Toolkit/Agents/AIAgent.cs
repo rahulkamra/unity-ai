@@ -125,14 +125,7 @@ namespace UnityAI.Toolkit.Agents
                         {
                             try
                             {
-                                if (matchedTool.IsAsync)
-                                {
-                                    result = await matchedTool.AsyncHandler(args);
-                                }
-                                else
-                                {
-                                    result = matchedTool.Handler(args);
-                                }
+                                result = await matchedTool.Handler(args);
                                 Debug.Log($"[AIAgent] Tool '{call.Name}' → {result}");
                             }
                             catch (Exception ex)
@@ -221,14 +214,7 @@ namespace UnityAI.Toolkit.Agents
                         {
                             try
                             {
-                                if (matchedTool.IsAsync)
-                                {
-                                    result = await matchedTool.AsyncHandler(args);
-                                }
-                                else
-                                {
-                                    result = matchedTool.Handler(args);
-                                }
+                                result = await matchedTool.Handler(args);
                                 Debug.Log($"[AIAgent] Tool '{call.Name}' → {result}");
                             }
                             catch (Exception ex)
