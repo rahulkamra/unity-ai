@@ -1,0 +1,7 @@
+{
+    "name": "com.unityai.core",
+    "version": "0.1.0",
+    "displayName": "Unity AI",
+    "description": "LLM agent framework with tool-calling support",
+    "unity": "6000.0"
+}

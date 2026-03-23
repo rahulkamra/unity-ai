@@ -1,0 +1,802 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using LlmTornado.Chat;
+using LlmTornado.Chat.Vendors;
+using LlmTornado.ChatFunctions;
+using LlmTornado.Code;
+using LlmTornado.Skills;
+using LlmTornado.Vendor.Anthropic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace LlmTornado.Chat.Vendors.Anthropic
+{
+    internal class SingleOrArrayConverter<T> : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return objectType == typeof(List<T>);
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+        {
+            JToken token = JToken.Load(reader);
+
+            if (token.Type == JTokenType.Array)
+            {
+                return token.ToObject<List<T>>(serializer) ?? new List<T>();
+            }
+
+            T? item = token.ToObject<T>(serializer);
+            return item != null ? new List<T> { item } : new List<T>();
+        }
+
+        public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
+        {
+            serializer.Serialize(writer, value);
+        }
+    }
+
+    internal class StringOrObjectConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return objectType == typeof(string);
+        }
+
+        public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+        {
+            JToken token = JToken.Load(reader);
+
+            switch (token.Type)
+            {
+                case JTokenType.String:
+                    return token.ToString();
+                case JTokenType.Object:
+                case JTokenType.Array:
+                    return token.ToString(Formatting.None);
+                default:
+                    return null;
+            }
+        }
+
+        public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
+        {
+            writer.WriteValue(value?.ToString());
+        }
+    }
+
+    internal class VendorAnthropicChatResult : VendorChatResult
+    {
+        internal class VendorAnthropicChatResultContentBlockCitation
+        {
+            /// <summary>
+            /// char_location / page_location / content_block_location / web_search_result_location / search_result_location
+            /// </summary>
+            [JsonProperty("type")]
+            public string Type { get; set; }
+
+            [JsonProperty("text")]
+            public string? Text { get; set; }
+
+            [JsonProperty("encrypted_index")]
+            public string? EncryptedIndex { get; set; }
+
+            [JsonProperty("cited_text")]
+            public string? CitedText { get; set; }
+
+            [JsonProperty("title")]
+            public string? Title { get; set; }
+
+            [JsonProperty("url")]
+            public string? Url { get; set; }
+
+            [JsonProperty("document_index")]
+            public int? DocumentIndex { get; set; }
+
+            [JsonProperty("document_title")]
+            public string? DocumentTitle { get; set; }
+
+            [JsonProperty("end_char_index")]
+            public int? EndCharIndex { get; set; }
+
+            [JsonProperty("start_char_index")]
+            public int? StartCharIndex { get; set; }
+
+            [JsonProperty("end_page_number")]
+            public int? EndPageNumber { get; set; }
+
+            [JsonProperty("start_page_number")]
+            public int? StartPageNumber { get; set; }
+
+            [JsonProperty("end_block_index")]
+            public int? EndBlockIndex { get; set; }
+
+            [JsonProperty("start_block_index")]
+            public int? StartBlockIndex { get; set; }
+
+            [JsonProperty("search_result_index")]
+            public int? SearchResultIndex { get; set; }
+
+            [JsonProperty("source")]
+            public string? Source { get; set; }
+        }
+
+        internal class VendorAnthropicChatResultContentBlock
+        {
+            [JsonProperty("type")]
+            public string Type { get; set; }
+
+            [JsonProperty("cache_control")]
+            public AnthropicCacheSettings? CacheControl { get; set; }
+
+            [JsonProperty("citations")]
+            public List<VendorAnthropicChatResultContentBlockCitation>? Citations { get; set; }
+
+            /// <summary>
+            /// Text block.
+            /// </summary>
+            [JsonProperty("text")]
+            public string? Text { get; set; }
+
+            /// <summary>
+            /// Reasoning block.
+            /// </summary>
+            [JsonProperty("thinking")]
+            public string? Thinking { get; set; }
+
+            /// <summary>
+            /// Tool out.
+            /// </summary>
+            [JsonProperty("id")]
+            public string? Id { get; set; }
+
+            /// <summary>
+            /// Tool in.
+            /// </summary>
+            [JsonProperty("name")]
+            public string? Name { get; set; }
+
+            /// <summary>
+            /// JSON schema of tool out.
+            /// </summary>
+            [JsonProperty("input")]
+            public object? Input { get; set; }
+
+            /// <summary>
+            /// Tool in name + nanoid to be referenced in the tool response.
+            /// </summary>
+            [JsonProperty("tool_use_id")]
+            public string? ToolUseId { get; set; }
+
+            /// <summary>
+            /// Tool out response.
+            /// </summary>
+            [JsonProperty("content")]
+            [JsonConverter(typeof(StringOrObjectConverter))]
+            public string? Content { get; set; }
+
+            /// <summary>
+            /// Tool out invocation failed flag.
+            /// </summary>
+            [JsonProperty("is_error")]
+            public bool? IsError { get; set; }
+
+            /// <summary>
+            /// Used by thinking blocks, this token must be passed in subsequent calls to verify COT hasn't been tampered with.
+            /// </summary>
+            [JsonProperty("signature")]
+            public string? Signature { get; set; }
+
+            /// <summary>
+            /// Image source data for image blocks.
+            /// </summary>
+            [JsonProperty("source")]
+            public object? Source { get; set; }
+
+            /// <summary>
+            /// Error information for tool results or code execution results.
+            /// </summary>
+            [JsonProperty("error")]
+            public string? Error { get; set; }
+
+            /// <summary>
+            /// Output from code execution or tool results.
+            /// </summary>
+            [JsonProperty("output")]
+            public string? Output { get; set; }
+
+            /// <summary>
+            /// Results array for web search or other multi-result operations.
+            /// </summary>
+            [JsonProperty("results")]
+            public object? Results { get; set; }
+
+            /// <summary>
+            /// Server name for server tool use.
+            /// </summary>
+            [JsonProperty("server_name")]
+            public string? ServerName { get; set; }
+
+            /// <summary>
+            /// Tool name for MCP tool use.
+            /// </summary>
+            [JsonProperty("tool_name")]
+            public string? ToolName { get; set; }
+
+            /// <summary>
+            /// Parameters for MCP tool operations.
+            /// </summary>
+            [JsonProperty("params")]
+            public object? Params { get; set; }
+
+            /// <summary>
+            /// Document data for document blocks.
+            /// </summary>
+            [JsonProperty("document")]
+            public object? Document { get; set; }
+
+            /// <summary>
+            /// Indicates how the tool was invoked (for programmatic tool calling).
+            /// Present when tool is called from code execution.
+            /// </summary>
+            [JsonProperty("caller")]
+            public VendorAnthropicChatResultToolCaller? Caller { get; set; }
+        }
+
+        internal class VendorAnthropicChatResultToolCaller
+        {
+            /// <summary>
+            /// Type of caller: "direct" or "code_execution_20250825"
+            /// </summary>
+            [JsonProperty("type")]
+            public string? Type { get; set; }
+
+            /// <summary>
+            /// The tool_id of the code execution tool that made the programmatic call.
+            /// </summary>
+            [JsonProperty("tool_id")]
+            public string? ToolId { get; set; }
+        }
+
+        [JsonProperty("id")]
+        public string Id { get; set; }
+
+        [JsonProperty("type")]
+        public string Type { get; set; }
+
+        [JsonProperty("role")]
+        public string Role { get; set; }
+
+        [JsonProperty("content")]
+        [JsonConverter(typeof(SingleOrArrayConverter<VendorAnthropicChatResultContentBlock>))]
+        public List<VendorAnthropicChatResultContentBlock> Content { get; set; } = new List<VendorAnthropicChatResultContentBlock>();
+
+        [JsonProperty("model")]
+        public string Model { get; set; }
+
+        /// <summary>
+        /// "end_turn": the model reached a natural stopping point<br/>
+        /// "max_tokens": we exceeded the requested max_tokens or the model's maximum<br/>
+        /// "stop_sequence": one of your provided custom stop_sequences was generated<br/>
+        /// "tool_use": the model invoked one or more tools<br/>
+        /// "model_context_window_exceeded": the model stopped because it reached context window limit
+        /// </summary>
+        [JsonProperty("stop_reason")]
+        public string StopReason { get; set; }
+
+        [JsonProperty("stop_sequence")]
+        public string? StopSequence { get; set; }
+
+        [JsonProperty("usage")]
+        public VendorAnthropicUsage Usage { get; set; }
+
+        [JsonProperty("container")]
+        public VendorAnthropicChatResultContainer? Container { get; set; }  
+
+        public override ChatResult ToChatResult(string? postData, object? chatRequest)
+        {
+            ChatRequestServiceTiers? resolvedServiceTier = Usage?.ServiceTier switch
+            {
+                "priority" => ChatRequestServiceTiers.Priority,
+                "standard" => null,
+                _ => null
+            };
+
+            ChatRequestSpeeds? resolvedSpeed = Usage?.Speed switch
+            {
+                "fast" => ChatRequestSpeeds.Fast,
+                "standard" => ChatRequestSpeeds.Standard,
+                _ => null
+            };
+
+            ChatResult result = new ChatResult
+            {
+                Id = Id,
+                RequestId = Id,
+                Choices = new List<ChatChoice>(),
+                Usage = new ChatUsage(Usage),
+                Model = Model,
+                ProcessingTime = TimeSpan.Zero,
+                Object = JsonConvert.SerializeObject(Content, EndpointBase.NullSettings),
+                ServiceTier = resolvedServiceTier,
+                Speed = resolvedSpeed
+            };
+
+            ChatMessage? toolsMsg = null;
+            List<ChatChoiceAnthropicThinkingBlock>? thinkingBlocks = null;
+            ChatChoice? textChoice = null;
+
+            foreach (VendorAnthropicChatResultContentBlock contentBlock in Content) // we need to merge all tool blocks into one
+            {
+                VendorAnthropicChatMessageTypes type = VendorAnthropicChatMessageTypesCls.Map.GetValueOrDefault(contentBlock.Type, VendorAnthropicChatMessageTypes.Unknown);
+
+                switch (type)
+                {
+                    case VendorAnthropicChatMessageTypes.ToolUse:
+                    {
+                        toolsMsg ??= new ChatMessage(ChatMessageRoles.Tool)
+                        {
+                            ToolCalls = new List<ToolCall>()
+                        };
+
+                        toolsMsg.ToolCalls?.Add(ParseToolCall(contentBlock));
+                        break;
+                    }
+                    case VendorAnthropicChatMessageTypes.Text:
+                    {
+                        ChatMessagePart textPart = new ChatMessagePart(contentBlock.Text ?? string.Empty);
+
+                        if (contentBlock.Citations?.Count > 0)
+                        {
+                            List<IChatMessagePartCitation> convertedCitations = new List<IChatMessagePartCitation>();
+
+                            foreach (VendorAnthropicChatResultContentBlockCitation cit in contentBlock.Citations)
+                            {
+                                if (TryConvertCitation(cit, out IChatMessagePartCitation? conv) && conv is not null)
+                                {
+                                    convertedCitations.Add(conv);
+                                }
+                            }
+
+                            if (convertedCitations.Count > 0)
+                            {
+                                textPart.Citations = convertedCitations;
+                            }
+                        }
+
+                        ChatMessage textBlockMsg = new ChatMessage(ChatMessageRoles.Assistant, new List<ChatMessagePart> { textPart } );
+
+                        textChoice = new ChatChoice
+                        {
+                            FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                            StopReason = StopSequence,
+                            Index = result.Choices.Count + 1,
+                            Message = textBlockMsg,
+                            Delta = textBlockMsg
+                        };
+
+                        result.Choices.Add(textChoice);
+                        break;
+                    }
+                    case VendorAnthropicChatMessageTypes.Thinking:
+                    {
+                        thinkingBlocks ??= new List<ChatChoiceAnthropicThinkingBlock>();
+                        thinkingBlocks.Add(new ChatChoiceAnthropicThinkingBlock
+                        {
+                            Content = contentBlock.Thinking ?? string.Empty,
+                            Signature = contentBlock.Signature ?? string.Empty
+                        });
+                        break;
+                    }
+                    case VendorAnthropicChatMessageTypes.RedactedThinking:
+                    {
+                        // Redacted thinking is similar to thinking but may be encrypted/redacted
+                        // We'll add it as text content for visibility
+                        string redactedContent = "[REDACTED THINKING]";
+                        if (!string.IsNullOrEmpty(contentBlock.Thinking))
+                        {
+                            redactedContent = $"[REDACTED THINKING: {contentBlock.Thinking}]";
+                        }
+
+                        ChatMessage redactedMsg = new ChatMessage(ChatMessageRoles.Assistant,
+                            new List<ChatMessagePart> { new ChatMessagePart(redactedContent) });
+
+                        result.Choices.Add(new ChatChoice
+                        {
+                            FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                            StopReason = StopSequence,
+                            Index = result.Choices.Count + 1,
+                            Message = redactedMsg,
+                            Delta = redactedMsg
+                        });
+                        break;
+                    }
+                    case VendorAnthropicChatMessageTypes.ToolResult:
+                    {
+                        // Tool result content
+                        string toolResultContent = contentBlock.Content ?? 
+                                                  contentBlock.Output ?? 
+                                                  contentBlock.Text ?? 
+                                                  string.Empty;
+
+                        if (contentBlock.IsError == true && !string.IsNullOrEmpty(contentBlock.Error))
+                        {
+                            toolResultContent = $"[ERROR: {contentBlock.Error}]";
+                        }
+
+                        ChatMessage toolResultMsg = new ChatMessage(ChatMessageRoles.Tool,
+                            new List<ChatMessagePart> { new ChatMessagePart(toolResultContent) });
+
+                        result.Choices.Add(new ChatChoice
+                        {
+                            FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                            StopReason = StopSequence,
+                            Index = result.Choices.Count + 1,
+                            Message = toolResultMsg,
+                            Delta = toolResultMsg
+                        });
+                        break;
+                    }
+                    case VendorAnthropicChatMessageTypes.ServerToolUse:
+                    {
+                        // Server tool use - convert to text representation
+                        string serverToolContent = $"[Server Tool Use: {contentBlock.ServerName ?? contentBlock.Name ?? "unknown"}]";
+                        if (contentBlock.Input != null)
+                        {
+                            serverToolContent += $"\nInput: {contentBlock.Input}";
+                        }
+
+                        ChatMessage serverToolMsg = new ChatMessage(ChatMessageRoles.Assistant,
+                            new List<ChatMessagePart> { new ChatMessagePart(serverToolContent) });
+
+                        result.Choices.Add(new ChatChoice
+                        {
+                            FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                            StopReason = StopSequence,
+                            Index = result.Choices.Count + 1,
+                            Message = serverToolMsg,
+                            Delta = serverToolMsg
+                        });
+                        break;
+                    }
+                    case VendorAnthropicChatMessageTypes.TextEditorCodeExecutionViewResult:
+                    case VendorAnthropicChatMessageTypes.TextEditorCodeExecutionToolResult:
+                    case VendorAnthropicChatMessageTypes.CodeExecutionToolResult:
+                    case VendorAnthropicChatMessageTypes.BashCodeExecutionToolResult:
+                    {
+                        // Code execution results
+                        string codeResultContent = contentBlock.Output ?? 
+                                                  contentBlock.Content ?? 
+                                                  contentBlock.Text ?? 
+                                                  string.Empty;
+
+                        if (contentBlock.IsError == true)
+                        {
+                            string errorMsg = contentBlock.Error ?? "Unknown error";
+                            codeResultContent = $"[CODE EXECUTION ERROR: {errorMsg}]\n{codeResultContent}";
+                        }
+                        else
+                        {
+                            codeResultContent = $"[CODE EXECUTION OUTPUT]\n{codeResultContent}";
+                        }
+
+                        ChatMessage codeResultMsg = new ChatMessage(ChatMessageRoles.Tool,
+                            new List<ChatMessagePart> { new ChatMessagePart(codeResultContent) });
+
+                        result.Choices.Add(new ChatChoice
+                        {
+                            FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                            StopReason = StopSequence,
+                            Index = result.Choices.Count + 1,
+                            Message = codeResultMsg,
+                            Delta = codeResultMsg
+                        });
+                        break;
+                    }
+                    case VendorAnthropicChatMessageTypes.WebSearchToolResult:
+                    case VendorAnthropicChatMessageTypes.WebFetchToolResult:
+                    {
+                        // Web search/fetch results
+                        string webContent = contentBlock.Content ?? 
+                                           contentBlock.Text ?? 
+                                           string.Empty;
+
+                        if (contentBlock.Results != null)
+                        {
+                            webContent = $"[WEB RESULTS]\n{JsonConvert.SerializeObject(contentBlock.Results, Formatting.None)}";
+                        }
+                        else if (string.IsNullOrEmpty(webContent) && contentBlock.Output != null)
+                        {
+                            webContent = contentBlock.Output;
+                        }
+
+                        if (contentBlock.IsError == true)
+                        {
+                            string errorMsg = contentBlock.Error ?? "Unknown error";
+                            webContent = $"[WEB OPERATION ERROR: {errorMsg}]\n{webContent}";
+                        }
+
+                        ChatMessage webResultMsg = new ChatMessage(ChatMessageRoles.Tool,
+                            new List<ChatMessagePart> { new ChatMessagePart(webContent) });
+
+                        result.Choices.Add(new ChatChoice
+                        {
+                            FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                            StopReason = StopSequence,
+                            Index = result.Choices.Count + 1,
+                            Message = webResultMsg,
+                            Delta = webResultMsg
+                        });
+                        break;
+                    }
+                    case VendorAnthropicChatMessageTypes.McpToolUse:
+                    {
+                        // MCP tool use - convert to text representation
+                        string mcpToolContent = $"[MCP Tool Use: {contentBlock.ToolName ?? contentBlock.Name ?? "unknown"}]";
+                        if (contentBlock.Params != null)
+                        {
+                            mcpToolContent += $"\nParams: {JsonConvert.SerializeObject(contentBlock.Params, Formatting.None)}";
+                        }
+                        else if (contentBlock.Input != null)
+                        {
+                            mcpToolContent += $"\nInput: {contentBlock.Input}";
+                        }
+
+                        ChatMessage mcpToolMsg = new ChatMessage(ChatMessageRoles.Assistant,
+                            new List<ChatMessagePart> { new ChatMessagePart(mcpToolContent) });
+
+                        result.Choices.Add(new ChatChoice
+                        {
+                            FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                            StopReason = StopSequence,
+                            Index = result.Choices.Count + 1,
+                            Message = mcpToolMsg,
+                            Delta = mcpToolMsg
+                        });
+                        break;
+                    }
+                    case VendorAnthropicChatMessageTypes.McpToolResult:
+                    {
+                        // MCP tool result
+                        string mcpResultContent = contentBlock.Content ?? 
+                                                 contentBlock.Output ?? 
+                                                 contentBlock.Text ?? 
+                                                 string.Empty;
+
+                        if (contentBlock.IsError == true)
+                        {
+                            string errorMsg = contentBlock.Error ?? "Unknown error";
+                            mcpResultContent = $"[MCP TOOL ERROR: {errorMsg}]\n{mcpResultContent}";
+                        }
+                        else
+                        {
+                            mcpResultContent = $"[MCP TOOL RESULT]\n{mcpResultContent}";
+                        }
+
+                        ChatMessage mcpResultMsg = new ChatMessage(ChatMessageRoles.Tool,
+                            new List<ChatMessagePart> { new ChatMessagePart(mcpResultContent) });
+
+                        result.Choices.Add(new ChatChoice
+                        {
+                            FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                            StopReason = StopSequence,
+                            Index = result.Choices.Count + 1,
+                            Message = mcpResultMsg,
+                            Delta = mcpResultMsg
+                        });
+                        break;
+                    }
+                    case VendorAnthropicChatMessageTypes.ContainerUpload:
+                    {
+                        // Container upload - convert to text representation
+                        string containerContent = $"[Container Upload]";
+                        if (contentBlock.Content != null)
+                        {
+                            containerContent += $"\n{contentBlock.Content}";
+                        }
+                        else if (contentBlock.Text != null)
+                        {
+                            containerContent += $"\n{contentBlock.Text}";
+                        }
+
+                        ChatMessage containerMsg = new ChatMessage(ChatMessageRoles.Assistant,
+                            new List<ChatMessagePart> { new ChatMessagePart(containerContent) });
+
+                        result.Choices.Add(new ChatChoice
+                        {
+                            FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                            StopReason = StopSequence,
+                            Index = result.Choices.Count + 1,
+                            Message = containerMsg,
+                            Delta = containerMsg
+                        });
+                        break;
+                    }
+                    case VendorAnthropicChatMessageTypes.Compaction:
+                    {
+                        // Compaction block - server-generated summary of earlier conversation context
+                        string compactionContent = contentBlock.Content ?? string.Empty;
+
+                        ChatMessage compactionMsg = new ChatMessage(ChatMessageRoles.Assistant,
+                            new List<ChatMessagePart> { new ChatMessagePart { Type = ChatMessageTypes.Compaction, Text = compactionContent } });
+
+                        result.Choices.Add(new ChatChoice
+                        {
+                            FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                            StopReason = StopSequence,
+                            Index = result.Choices.Count + 1,
+                            Message = compactionMsg,
+                            Delta = compactionMsg
+                        });
+                        break;
+                    }
+                    case VendorAnthropicChatMessageTypes.Unknown:
+                    default:
+                    {
+                        // Unknown or unhandled content type - make best effort to extract text
+                        string unknownContent = contentBlock.Text ?? 
+                                               contentBlock.Thinking ?? 
+                                               contentBlock.Content ?? 
+                                               contentBlock.Output ?? 
+                                               $"[Unknown content type: {contentBlock.Type}]";
+
+                        ChatMessage unknownMsg = new ChatMessage(ChatMessageRoles.Assistant,
+                            new List<ChatMessagePart> { new ChatMessagePart(unknownContent) });
+
+                        result.Choices.Add(new ChatChoice
+                        {
+                            FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                            StopReason = StopSequence,
+                            Index = result.Choices.Count + 1,
+                            Message = unknownMsg,
+                            Delta = unknownMsg
+                        });
+                        break;
+                    }
+                }
+            }
+
+            if (thinkingBlocks?.Count > 0)
+            {
+                if (textChoice?.Message is not null)
+                {
+                    // we will prepend thinking blocks
+                    if (thinkingBlocks.Count > 1)
+                    {
+                        thinkingBlocks.Reverse();
+                    }
+
+                    foreach (ChatChoiceAnthropicThinkingBlock x in thinkingBlocks)
+                    {
+                        textChoice.Message.Parts ??= new List<ChatMessagePart>();
+
+                        textChoice.Message.Parts.Insert(0, new ChatMessagePart
+                        {
+                            Type = ChatMessageTypes.Reasoning,
+                            Reasoning = new ChatMessageReasoningData
+                            {
+                                Content = x.Content,
+                                Signature = x.Signature
+                            }
+                        });
+                    }
+                }
+                else
+                {
+                   // todo?
+                }
+            }
+
+            if (toolsMsg is not null)
+            {
+                result.Choices.Add(new ChatChoice
+                {
+                    FinishReason = ChatMessageFinishReasonsConverter.Map.GetValueOrDefault(StopReason, ChatMessageFinishReasons.Unknown),
+                    StopReason = StopSequence,
+                    Index = result.Choices.Count + 1,
+                    Message = toolsMsg,
+                    Delta = toolsMsg
+                });
+            }
+
+            ChatResult = result;
+            return result;
+        }
+
+        private static ToolCall ParseToolCall(VendorAnthropicChatResultContentBlock contentBlock)
+        {
+            ToolCall toolCall = new ToolCall
+            {
+                Id = contentBlock.Id ?? string.Empty,
+                Type = "function",
+                FunctionCall = new FunctionCall
+                {
+                    Name = contentBlock.Name ?? string.Empty, // out tool name is equal to tool_use_id in Claude3 models
+                    Arguments = contentBlock.Input?.ToString() ?? string.Empty
+                }
+            };
+
+            // Parse caller info for programmatic tool calling
+            if (contentBlock.Caller is not null)
+            {
+                ToolCallCallerTypes callerType = contentBlock.Caller.Type switch
+                {
+                    "code_execution_20250825" => ToolCallCallerTypes.CodeExecution20250825,
+                    _ => ToolCallCallerTypes.Direct
+                };
+
+                toolCall.Caller = new ToolCallCaller
+                {
+                    Type = callerType,
+                    ToolId = contentBlock.Caller.ToolId
+                };
+            }
+
+            return toolCall;
+        }
+
+        private static bool TryConvertCitation(VendorAnthropicChatResultContentBlockCitation cit, out IChatMessagePartCitation? converted)
+        {
+            converted = null;
+            switch (cit.Type)
+            {
+                case "char_location":
+                    converted = new ChatMessagePartCitationCharLocation
+                    {
+                        CitedText = cit.CitedText ?? string.Empty,
+                        DocumentIndex = cit.DocumentIndex ?? 0,
+                        DocumentTitle = cit.DocumentTitle,
+                        StartCharIndex = cit.StartCharIndex ?? 0,
+                        EndCharIndex = cit.EndCharIndex ?? 0
+                    };
+                    break;
+                case "page_location":
+                    converted = new ChatMessagePartCitationPageLocation
+                    {
+                        CitedText = cit.CitedText ?? string.Empty,
+                        DocumentIndex = cit.DocumentIndex ?? 0,
+                        DocumentTitle = cit.DocumentTitle,
+                        StartPageNumber = cit.StartPageNumber ?? 1,
+                        EndPageNumber = cit.EndPageNumber ?? 1
+                    };
+                    break;
+                case "content_block_location":
+                    converted = new ChatMessagePartCitationContentBlockLocation
+                    {
+                        CitedText = cit.CitedText ?? string.Empty,
+                        DocumentIndex = cit.DocumentIndex ?? 0,
+                        DocumentTitle = cit.DocumentTitle,
+                        StartBlockIndex = cit.StartBlockIndex ?? 0,
+                        EndBlockIndex = cit.EndBlockIndex ?? 0
+                    };
+                    break;
+                case "web_search_result_location":
+                    converted = new ChatMessagePartCitationWebSearchResultLocation
+                    {
+                        CitedText = cit.CitedText ?? string.Empty,
+                        EncryptedIndex = cit.EncryptedIndex ?? string.Empty,
+                        Title = cit.Title,
+                        Url = cit.Url ?? string.Empty
+                    };
+                    break;
+                case "search_result_location":
+                    converted = new ChatMessagePartCitationSearchResultLocation
+                    {
+                        CitedText = cit.CitedText ?? string.Empty,
+                        Source = cit.Source ?? string.Empty,
+                        Title = cit.Title,
+                        SearchResultIndex = cit.SearchResultIndex ?? 0,
+                        StartBlockIndex = cit.StartBlockIndex ?? 0,
+                        EndBlockIndex = cit.EndBlockIndex ?? 0
+                    };
+                    break;
+                default:
+                    return false;
+            }
+
+            return true;
+        }
+    }
+}

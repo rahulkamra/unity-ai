@@ -1,0 +1,167 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using LlmTornado.Code;
+using LlmTornado.Code.Models;
+
+namespace LlmTornado.Chat.Models
+{
+    /// <summary>
+    /// Known chat models from Google.
+    /// </summary>
+    public class ChatModelGoogle : BaseVendorModelProvider
+    {
+        /// <inheritdoc cref="BaseVendorModelProvider.Provider"/>
+        public override LLmProviders Provider => LLmProviders.Google;
+
+        /// <summary>
+        /// Gemini models.
+        /// </summary>
+        public readonly ChatModelGoogleGemini Gemini = new ChatModelGoogleGemini();
+
+        /// <summary>
+        /// Gemma models.
+        /// </summary>
+        public readonly ChatModelGoogleGemma Gemma = new ChatModelGoogleGemma();
+
+        /// <summary>
+        /// Experimental Gemini models.
+        /// </summary>
+        public readonly ChatModelGoogleGeminiExperimental GeminiExperimental = new ChatModelGoogleGeminiExperimental();
+
+        /// <summary>
+        /// Preview Gemini models.
+        /// </summary>
+        public readonly ChatModelGoogleGeminiPreview GeminiPreview = new ChatModelGoogleGeminiPreview();
+
+        /// <summary>
+        /// All known chat models from Google.
+        /// </summary>
+        public override List<IModel> AllModels => ModelsAll;
+
+        /// <summary>
+        /// Checks whether the model is owned by the provider.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public override bool OwnsModel(string model)
+        {
+            return AllModelsMap.Contains(model);
+        }
+
+        /// <summary>
+        /// Map of models owned by the provider.
+        /// </summary>
+        public static HashSet<string> AllModelsMap => LazyAllModelsMap.Value;
+
+        private static readonly Lazy<HashSet<string>> LazyAllModelsMap = new Lazy<HashSet<string>>(() =>
+        {
+            HashSet<string> map = new HashSet<string>();
+
+            ModelsAll.ForEach(x => { map.Add(x.Name); });
+
+            return map;
+        });
+
+        /// <summary>
+        /// <inheritdoc cref="AllModels"/>
+        /// </summary>
+        public static List<IModel> ModelsAll => LazyModelsAll.Value;
+
+        private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => ChatModelGoogleGemini.ModelsAll.Concat(ChatModelGoogleGeminiExperimental.ModelsAll).Concat(ChatModelGoogleGemma.ModelsAll).Concat(ChatModelGoogleGeminiPreview.ModelsAll).ToList());
+
+        /// <summary>
+        /// Models that support reasoning.
+        /// </summary>
+        public static readonly HashSet<IModel> ReasoningModels = new HashSet<IModel>
+        {
+            ChatModelGoogleGemini.ModelGemini25Pro,
+            ChatModelGoogleGemini.ModelGemini25Flash,
+            ChatModelGoogleGemini.ModelGemini25FlashLite,
+            ChatModelGoogleGeminiPreview.ModelGemini25FlashLitePreview0617,
+            ChatModelGoogleGeminiPreview.ModelGemini3ProPreview,
+            ChatModelGoogleGeminiPreview.ModelGemini3FlashPreview,
+            ChatModelGoogleGeminiPreview.ModelGemini31ProPreview,
+            ChatModelGoogleGeminiPreview.ModelGemini31ProPreviewCustomtools
+        };
+
+        /// <summary>
+        /// Models that support image modality.
+        /// </summary>
+        public static readonly HashSet<IModel> ImageModalitySupportingModels = new HashSet<IModel>
+        {
+            ChatModelGoogleGemini.ModelGemini25Pro,
+            ChatModelGoogleGemini.ModelGemini25Flash,
+            ChatModelGoogleGemini.ModelGemini25FlashLite,
+            ChatModelGoogleGeminiPreview.ModelGemini25FlashLitePreview0617,
+            ChatModelGoogleGeminiPreview.ModelGemini3ProPreview,
+            ChatModelGoogleGeminiPreview.ModelGemini3ProImagePreview,
+            ChatModelGoogleGeminiPreview.ModelGemini3FlashPreview,
+            ChatModelGoogleGeminiPreview.ModelGemini31ProPreview,
+            ChatModelGoogleGeminiPreview.ModelGemini31ProPreviewCustomtools,
+            ChatModelGoogleGeminiPreview.ModelGemini31FlashImagePreview
+        };
+
+        /// <summary>
+        /// Models that support Gemini 3 features.
+        /// </summary>
+        public static readonly HashSet<IModel> Gemini3Models = new HashSet<IModel>
+        {
+            ChatModelGoogleGeminiPreview.ModelGemini3ProPreview,
+            ChatModelGoogleGeminiPreview.ModelGemini3ProImagePreview,
+            ChatModelGoogleGeminiPreview.ModelGemini3FlashPreview
+        };
+
+        /// <summary>
+        /// Models that support Gemini 3.1 features. These models are backwards-compatible with <see cref="Gemini3Models"/> features.
+        /// </summary>
+        public static readonly HashSet<IModel> Gemini31Models = new HashSet<IModel>
+        {
+            ChatModelGoogleGeminiPreview.ModelGemini31ProPreview,
+            ChatModelGoogleGeminiPreview.ModelGemini31ProPreviewCustomtools,
+            ChatModelGoogleGeminiPreview.ModelGemini31FlashImagePreview
+        };
+
+        /// <summary>
+        /// Models that do not support developer message.
+        /// </summary>
+        public static readonly HashSet<IModel> ModelsWithDisabledDeveloperMessage = new HashSet<IModel>
+        {
+            ChatModelGoogleGemini.ModelGemini15Pro,
+            ChatModelGoogleGemini.ModelGemini15Flash8B
+        };
+
+        /// <summary>
+        /// Computer Use capable models from Google.
+        /// </summary>
+        public static List<IModel> ComputerUseModels => LazyComputerUseModels.Value;
+
+        private static readonly Lazy<List<IModel>> LazyComputerUseModels = new Lazy<List<IModel>>(() => new List<IModel> {ChatModelGoogleGeminiPreview.ModelGemini25ComputerUsePreview102025, ChatModelGoogleGeminiPreview.ModelGemini3ProPreview, ChatModelGoogleGeminiPreview.ModelGemini3FlashPreview, ChatModelGoogleGeminiPreview.ModelGemini31ProPreview, ChatModelGoogleGeminiPreview.ModelGemini31ProPreviewCustomtools});
+
+        /// <summary>
+        /// Models capable of reasoning.
+        /// </summary>
+        public static List<IModel>? ReasoningModelsList => LazyReasoningModels.Value;
+
+        private static readonly Lazy<List<IModel>> LazyReasoningModels = new Lazy<List<IModel>>(() => new List<IModel> {ChatModelGoogleGeminiPreview.ModelGemini25FlashPreview0417, ChatModelGoogleGeminiPreview.ModelGemini25ProPreview0325, ChatModelGoogleGeminiPreview.ModelGemini25FlashPreview0520, ChatModelGoogleGeminiPreview.ModelGemini25ProPreview0506, ChatModelGoogleGeminiPreview.ModelGemini25ProPreview0605, ChatModelGoogleGemini.ModelGemini25Pro, ChatModelGoogleGemini.ModelGemini25Flash, ChatModelGoogleGeminiPreview.ModelGemini25FlashLitePreview0617, ChatModelGoogleGeminiPreview.ModelGemini31ProPreview, ChatModelGoogleGeminiPreview.ModelGemini31ProPreviewCustomtools});
+
+        /// <summary>
+        /// Models capable of generating images.
+        /// </summary>
+        public static List<IModel> ImageModalitySupportingModelsList => LazyImageModalitySupportingModels.Value;
+
+        private static readonly Lazy<List<IModel>> LazyImageModalitySupportingModels = new Lazy<List<IModel>>(() => new List<IModel> {ChatModelGoogleGeminiExperimental.ModelGemini2FlashImageGeneration, ChatModelGoogleGeminiPreview.ModelGemini2FlashPreviewImageGeneration, ChatModelGoogleGeminiPreview.ModelGemini25FlashImagePreview, ChatModelGoogleGeminiPreview.ModelGemini3ProImagePreview, ChatModelGoogleGeminiPreview.ModelGemini31FlashImagePreview});
+
+        /// <summary>
+        /// Models listed don't support system prompt.
+        /// </summary>
+        public static List<IModel> ModelsWithDisabledDeveloperMessageList => LazyModelsWithDisabledDeveloperMessage.Value;
+
+        private static readonly Lazy<List<IModel>> LazyModelsWithDisabledDeveloperMessage = new Lazy<List<IModel>>(() => ChatModelGoogleGemma.ModelsAll.ToList());
+
+        internal ChatModelGoogle()
+        {
+
+        }
+    }
+}

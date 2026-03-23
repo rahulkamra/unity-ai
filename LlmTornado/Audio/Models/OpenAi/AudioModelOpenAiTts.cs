@@ -1,0 +1,64 @@
+using System;
+using System.Collections.Generic;
+using LlmTornado.Code;
+using LlmTornado.Code.Models;
+
+namespace LlmTornado.Audio.Models.OpenAi
+{
+    /// <summary>
+    /// Tts class models from OpenAI.
+    /// </summary>
+    public class AudioModelOpenAiTts : IVendorModelClassProvider
+    {
+        /// <summary>
+        /// Tts 1
+        /// </summary>
+        public static readonly AudioModel ModelTts1 = new AudioModel("tts-1", LLmProviders.OpenAi, 16_385);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelTts1"/>
+        /// </summary>
+        public readonly AudioModel Tts1 = ModelTts1;
+
+        /// <summary>
+        /// Tts 1 HD
+        /// </summary>
+        public static readonly AudioModel ModelTts1Hd = new AudioModel("tts-1-hd", LLmProviders.OpenAi, 16_385);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelTts1Hd"/>
+        /// </summary>
+        public readonly AudioModel Tts1Hd = ModelTts1Hd;
+
+        /// <summary>
+        /// gpt-4o-mini-tts-2025-12-15
+        /// </summary>
+        public static readonly AudioModel ModelGpt4OMiniTts20251215 = new AudioModel("gpt-4o-mini-tts-2025-12-15", LLmProviders.OpenAi, 16_385);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGpt4OMiniTts20251215"/>
+        /// </summary>
+        public readonly AudioModel Gpt4OMiniTts20251215 = ModelGpt4OMiniTts20251215;
+
+        /// <summary>
+        /// All known Tts models from OpenAI.
+        /// </summary>
+        public static List<IModel> ModelsAll => LazyModelsAll.Value;
+
+        private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => new List<IModel> {
+            ModelTts1,
+            ModelTts1Hd,
+            ModelGpt4OMiniTts20251215
+        });
+
+        /// <summary>
+        /// <inheritdoc cref="ModelsAll"/>
+        /// </summary>
+        public List<IModel> AllModels => ModelsAll;
+
+        internal AudioModelOpenAiTts()
+        {
+
+        }
+    }
+}

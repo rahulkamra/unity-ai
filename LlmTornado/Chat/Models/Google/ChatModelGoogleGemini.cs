@@ -1,0 +1,255 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using LlmTornado.Code;
+using LlmTornado.Code.Models;
+
+namespace LlmTornado.Chat.Models
+{
+    /// <summary>
+    /// Gemini class models from Google.
+    /// </summary>
+    public class ChatModelGoogleGemini : IVendorModelClassProvider
+    {
+        /// <summary>
+        /// Gemini 2.5 Pro is our state-of-the-art thinking model, capable of reasoning over complex problems in code, math, and STEM, as well as analyzing large datasets, codebases, and documents using long context.
+        /// </summary>
+        public static readonly ChatModel ModelGemini25Pro = new ChatModel("gemini-2.5-pro", LLmProviders.Google, 1_000_000)
+        {
+            ReasoningTokensMin = 128,
+            ReasoningTokensMax = 32_768,
+            ReasoningTokensSpecialValues = new HashSet<int> { -1 }
+        };
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini25Pro"/>
+        /// </summary>
+        public readonly ChatModel Gemini25Pro = ModelGemini25Pro;
+
+        /// <summary>
+        /// Alias pointing to gemini-3-pro-preview. Gemini 3 Pro is the first model in the new series, best for complex tasks that require broad world knowledge and advanced reasoning across modalities.
+        /// </summary>
+        public static readonly ChatModel ModelGeminiProLatest = new ChatModel("gemini-pro-latest", LLmProviders.Google, 1_000_000) 
+        {
+            ReasoningTokensMin = 128,
+            ReasoningTokensMax = 32_768,
+            ReasoningTokensSpecialValues = new HashSet<int> { -1 }
+        };
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGeminiProLatest"/>
+        /// </summary>
+        public readonly ChatModel GeminiProLatest = ModelGeminiProLatest;
+
+        /// <summary>
+        /// Alias pointing to gemini-3-flash-preview. Gemini 3 Flash is our latest 3-series model, with Pro-level intelligence at the speed and pricing of Flash.
+        /// </summary>
+        public static readonly ChatModel ModelGeminiFlashLatest = new ChatModel("gemini-flash-latest", LLmProviders.Google, 1_000_000) 
+        {
+            ReasoningTokensMin = 0,
+            ReasoningTokensMax = 24_576,
+            ReasoningTokensSpecialValues = new HashSet<int> { -1 }
+        };
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGeminiFlashLatest"/>
+        /// </summary>
+        public readonly ChatModel GeminiFlashLatest = ModelGeminiFlashLatest;
+
+        /// <summary>
+        /// Our best model in terms of price-performance, offering well-rounded capabilities. 2.5 Flash is best for large scale processing, low-latency, high volume tasks that require thinking, and agentic use cases.
+        /// </summary>
+        public static readonly ChatModel ModelGemini25Flash = new ChatModel("gemini-2.5-flash", LLmProviders.Google, 1_000_000) 
+        {
+            ReasoningTokensMin = 0,
+            ReasoningTokensMax = 24_576,
+            ReasoningTokensSpecialValues = new HashSet<int> { -1 }
+        };
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini25Flash"/>
+        /// </summary>
+        public readonly ChatModel Gemini25Flash = ModelGemini25Flash;
+
+        /// <summary>
+        /// gemini-2.5-flash-lite-preview-09-2025
+        /// </summary>
+        public static readonly ChatModel ModelGeminiFlashLiteLatest = new ChatModel("gemini-flash-lite-latest", LLmProviders.Google, 1_000_000) 
+        {
+            ReasoningTokensMin = 512,
+            ReasoningTokensMax = 24_576,
+            ReasoningTokensSpecialValues = new HashSet<int> { 0, -1 }
+        };
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGeminiFlashLiteLatest"/>
+        /// </summary>
+        public readonly ChatModel GeminiFlashLiteLatest = ModelGeminiFlashLiteLatest;
+
+        /// <summary>
+        /// A Gemini 2.5 Flash model optimized for cost-efficiency and high throughput.
+        /// </summary>
+        public static readonly ChatModel ModelGemini25FlashLite = new ChatModel("gemini-2.5-flash-lite", LLmProviders.Google, 1_000_000) 
+        {
+            ReasoningTokensMin = 512,
+            ReasoningTokensMax = 24_576,
+            ReasoningTokensSpecialValues = new HashSet<int> { 0, -1 }
+        };
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini25FlashLite"/>
+        /// </summary>
+        public readonly ChatModel Gemini25FlashLite = ModelGemini25FlashLite;
+
+        /// <summary>
+        /// Fast and versatile performance across a diverse variety of tasks (stable).
+        /// </summary>
+        [Obsolete("MARCH 31 WILL BE THE END :( Use ModelGeminiFlashLatest instead.")]
+        public static readonly ChatModel ModelGemini2Flash001 = new ChatModel("gemini-2.0-flash-001", LLmProviders.Google, 1_000_000);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini2Flash001"/>
+        /// </summary>
+        [Obsolete("MARCH 31 WILL BE THE END :( Use ModelGeminiFlashLatest instead.")]
+        public readonly ChatModel Gemini2Flash001 = ModelGemini2Flash001;
+
+        /// <summary>
+        /// Fast and versatile performance across a diverse variety of tasks (latest).
+        /// </summary>
+        [Obsolete("MARCH 31 WILL BE THE END :( Use ModelGeminiFlashLatest instead.")]
+        public static readonly ChatModel ModelGemini2FlashLatest = new ChatModel("gemini-2.0-flash", LLmProviders.Google, 1_000_000);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini2FlashLatest"/>
+        [Obsolete("MARCH 31 WILL BE THE END :( Use ModelGeminiFlashLatest instead.")]
+        public readonly ChatModel Gemini2FlashLatest = ModelGemini2FlashLatest;
+
+        /// <summary>
+        /// A Gemini 2.0 Flash model optimized for cost efficiency and low latency (stable).
+        /// </summary>
+        [Obsolete("MARCH 31 WILL BE THE END :( Use GeminiFlashLiteLatest instead.")]
+        public static readonly ChatModel ModelGemini2FlashLite001 = new ChatModel("gemini-2.0-flash-lite-001", LLmProviders.Google, 1_000_000);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini2FlashLite001"/>
+        /// </summary>
+        [Obsolete("MARCH 31 WILL BE THE END :( Use GeminiFlashLiteLatest instead.")]
+        public readonly ChatModel Gemini2FlashLite001 = ModelGemini2FlashLite001;
+
+        /// <summary>
+        /// A Gemini 2.0 Flash model optimized for cost efficiency and low latency (latest).
+        /// </summary>
+        [Obsolete("MARCH 31 WILL BE THE END :( Use GeminiFlashLiteLatest instead.")]
+        public static readonly ChatModel ModelGemini2FlashLiteLatest = new ChatModel("gemini-2.0-flash-lite", LLmProviders.Google, 1_000_000);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini2FlashLiteLatest"/>
+        /// </summary>
+        [Obsolete("MARCH 31 WILL BE THE END :( Use GeminiFlashLiteLatest instead.")]
+        public readonly ChatModel Gemini2FlashLiteLatest = ModelGemini2FlashLiteLatest;
+
+        /// <summary>
+        /// Complex reasoning tasks such as code and text generation, text editing, problem-solving, data extraction and generation.
+        /// </summary>
+        [Obsolete("Use ModelGemini25Pro instead.")]
+        public static readonly ChatModel ModelGemini15ProLatest = new ChatModel("gemini-1.5-pro-latest", LLmProviders.Google, 1_000_000);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini15ProLatest"/>
+        /// </summary>
+        [Obsolete("Use ModelGemini25Pro instead.")]
+        public readonly ChatModel Gemini15ProLatest = ModelGemini15ProLatest;
+
+        /// <summary>
+        /// Complex reasoning tasks such as code and text generation, text editing, problem-solving, data extraction and generation.
+        /// </summary>
+        [Obsolete("Use ModelGemini25Pro instead.")]
+        public static readonly ChatModel ModelGemini15Pro = new ChatModel("gemini-1.5-pro", LLmProviders.Google, 1_000_000);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini15Pro"/>
+        /// </summary>
+        [Obsolete("Use ModelGemini25Pro instead.")]
+        public readonly ChatModel Gemini15Pro = ModelGemini15Pro;
+
+        /// <summary>
+        /// Complex reasoning tasks such as code and text generation, text editing, problem-solving, data extraction and generation.
+        /// </summary>
+        [Obsolete("Use ModelGemini25Pro instead.")]
+        public static readonly ChatModel ModelGemini15Pro001 = new ChatModel("gemini-1.5-pro-001", LLmProviders.Google, 1_000_000);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini15Pro001"/>
+        /// </summary>
+        [Obsolete("Use ModelGemini25Pro instead.")]
+        public readonly ChatModel Gemini15Pro001 = ModelGemini15Pro001;
+
+        /// <summary>
+        /// Complex reasoning tasks such as code and text generation, text editing, problem-solving, data extraction and generation.
+        /// </summary>
+        [Obsolete("Use ModelGemini25Pro instead.")]
+        public static readonly ChatModel ModelGemini15Pro002 = new ChatModel("gemini-1.5-pro-002", LLmProviders.Google, 1_000_000);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini15Pro002"/>
+        /// </summary>
+        [Obsolete("Use ModelGemini25Pro instead.")]
+        public readonly ChatModel Gemini15Pro002 = ModelGemini15Pro002;
+
+        /// <summary>
+        /// Gemini 1.5 Flash-8B is a small model designed for lower intelligence tasks.
+        /// </summary>
+        [Obsolete("Use ModelGeminiFlashLatest instead.")]
+        public static readonly ChatModel ModelGemini15Flash8BLatest = new ChatModel("gemini-1.5-flash-8b-latest", LLmProviders.Google, 1_000_000);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini15Flash8BLatest"/>
+        /// </summary>
+        [Obsolete("Use ModelGeminiFlashLatest instead.")]
+        public readonly ChatModel Gemini15Flash8BLatest = ModelGemini15Flash8BLatest;
+
+        /// <summary>
+        /// Gemini 1.5 Flash-8B is a small model designed for lower intelligence tasks.
+        /// </summary>
+        [Obsolete("Use ModelGeminiFlashLatest instead.")]
+        public static readonly ChatModel ModelGemini15Flash8B = new ChatModel("gemini-1.5-flash-8b", LLmProviders.Google, 1_000_000);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini15Flash8B"/>
+        /// </summary>
+        [Obsolete("Use ModelGeminiFlashLatest instead.")]
+        public readonly ChatModel Gemini15Flash8B = ModelGemini15Flash8B;
+
+        /// <summary>
+        /// Gemini 2.5 Flash Image is our latest, fastest, and most efficient natively multimodal model that lets you generate and edit images conversationally.
+        /// </summary>
+        public static readonly ChatModel ModelGemini25FlashImage = new ChatModel("gemini-2.5-flash-image", LLmProviders.Google, 32_768);
+
+        /// <summary>
+        /// <inheritdoc cref="ModelGemini25FlashImage"/>
+        /// </summary>
+        public readonly ChatModel Gemini25FlashImage = ModelGemini25FlashImage;
+
+        /// <summary>
+        /// All known Gemini models from Google.
+        /// </summary>
+        public static List<IModel> ModelsAll => LazyModelsAll.Value;
+
+        private static readonly Lazy<List<IModel>> LazyModelsAll = new Lazy<List<IModel>>(() => new List<IModel> {
+            ModelGemini15ProLatest,
+            ModelGemini15Pro, ModelGemini15Pro001, ModelGemini15Pro002, ModelGemini15Flash8B, ModelGemini15Flash8BLatest, ModelGemini2Flash001,
+            ModelGemini2FlashLatest, ModelGemini2FlashLite001, ModelGemini2FlashLiteLatest, ModelGemini25Pro, ModelGemini25Flash,
+            ModelGemini25FlashLite, ModelGeminiFlashLiteLatest, ModelGeminiFlashLatest, ModelGeminiProLatest, ModelGemini25FlashImage
+        });
+
+        /// <summary>
+        /// <inheritdoc cref="ModelsAll"/>
+        /// </summary>
+        public List<IModel> AllModels => ModelsAll;
+
+        internal ChatModelGoogleGemini()
+        {
+
+        }
+    }
+}
