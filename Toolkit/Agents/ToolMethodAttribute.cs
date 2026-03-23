@@ -1,6 +1,6 @@
 using System;
 
-namespace UnityAI.Agent
+namespace UnityAI.Toolkit.Agents
 {
     /// <summary>
     /// Marks a method as an AI tool that can be invoked by the LLM.

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace UnityAI.Agent
+namespace UnityAI.Toolkit.Agents
 {
     /// <summary>
     /// Response from an AI agent after processing a message, including any tool calls made.

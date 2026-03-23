@@ -9,9 +9,10 @@ using LlmTornado.Chat.Models;
 using LlmTornado.ChatFunctions;
 using LlmTornado.Common;
 using Newtonsoft.Json;
+using UnityAI.Toolkit.Prompts;
 using UnityEngine;
 
-namespace UnityAI.Agent
+namespace UnityAI.Toolkit.Agents
 {
     /// <summary>
     /// Reusable AI agent with native tool-calling support.
@@ -28,6 +29,8 @@ namespace UnityAI.Agent
 
         private Conversation conversation;
         private string systemPrompt;
+        private ChatPromptTemplate promptTemplate;
+        private Dictionary<string, string> promptVariables;
 
         public AIAgent(TornadoApi api, ChatModel model)
         {
@@ -54,11 +57,33 @@ namespace UnityAI.Agent
         }
 
         /// <summary>
-        /// Sets the system prompt for the conversation.
+        /// Sets the system prompt for the conversation as a raw string.
+        /// Clears any previously set prompt template.
         /// </summary>
         public void SetSystemPrompt(string prompt)
         {
             systemPrompt = prompt;
+            promptTemplate = null;
+            promptVariables = null;
+        }
+
+        /// <summary>
+        /// Sets a chat prompt template with variables for the conversation.
+        /// The template is applied on each SendAsync call. Clears any raw system prompt.
+        /// </summary>
+        public void SetPromptTemplate(ChatPromptTemplate template, Dictionary<string, string> variables = null)
+        {
+            promptTemplate = template;
+            promptVariables = variables;
+            systemPrompt = null;
+        }
+
+        /// <summary>
+        /// Updates prompt template variables without replacing the template.
+        /// </summary>
+        public void SetPromptVariables(Dictionary<string, string> variables)
+        {
+            promptVariables = variables;
         }
 
         /// <summary>
@@ -67,7 +92,7 @@ namespace UnityAI.Agent
         public async Task<AgentResponse> SendAsync(string userMessage, CancellationToken cancellationToken = default)
         {
             EnsureConversation();
-            conversation.SetSystemMessage(systemPrompt ?? "");
+            ApplyPrompt();
 
             // Set tools on the conversation
             List<Tool> tools = new List<Tool>();
@@ -158,7 +183,7 @@ namespace UnityAI.Agent
         public async Task<AgentResponse<TResponse>> SendAsync<TResponse>(string userMessage, CancellationToken cancellationToken = default)
         {
             EnsureConversation();
-            conversation.SetSystemMessage(systemPrompt ?? "");
+            ApplyPrompt();
 
             // Set tools on the conversation
             List<Tool> tools = new List<Tool>();
@@ -307,6 +332,18 @@ namespace UnityAI.Agent
             if (conversation == null)
             {
                 conversation = api.Chat.CreateConversation(model);
+            }
+        }
+
+        private void ApplyPrompt()
+        {
+            if (promptTemplate != null)
+            {
+                promptTemplate.ApplyTo(conversation, promptVariables ?? new Dictionary<string, string>());
+            }
+            else
+            {
+                conversation.SetSystemMessage(systemPrompt ?? "");
             }
         }
 

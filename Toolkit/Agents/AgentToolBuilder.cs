@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using LlmTornado.Infra;
 using UnityEngine;
 
-namespace UnityAI.Agent
+namespace UnityAI.Toolkit.Agents
 {
     /// <summary>
     /// Scans an object for methods marked with [ToolMethod] and creates AgentTool instances

@@ -1,6 +1,6 @@
 {
-    "name": "UnityAI.Agent",
-    "rootNamespace": "UnityAI.Agent",
+    "name": "UnityAI.Toolkit",
+    "rootNamespace": "UnityAI.Toolkit",
     "references": [
         "LlmTornado"
     ],

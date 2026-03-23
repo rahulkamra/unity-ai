@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using LlmTornado.Infra;
 
-namespace UnityAI.Agent
+namespace UnityAI.Toolkit.Agents
 {
     /// <summary>
     /// Defines a tool that an AI agent can invoke during conversation.
