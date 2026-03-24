@@ -137,36 +137,6 @@ namespace UnityAI.Toolkit.Agents
         }
 
         /// <summary>
-        /// Sends a one-shot request to the LLM and returns a structured response.
-        /// Creates a fresh, isolated conversation — does not touch the agent's conversation history.
-        /// </summary>
-        public async Task<TResponse> ReasonAsync<TResponse>(string reasoningSystemPrompt, string userMessage, CancellationToken cancellationToken = default)
-        {
-            Conversation reasoningConversation = api.Chat.CreateConversation(model);
-            reasoningConversation.SetSystemMessage(reasoningSystemPrompt);
-
-            string schemaName = typeof(TResponse).Name;
-            object schema = GenerateJsonSchema(typeof(TResponse));
-            reasoningConversation.RequestParameters.ResponseFormat = ChatRequestResponseFormats.StructuredJson(schemaName, schema);
-
-            Debug.Log($"[ReactAgent] ReasonAsync<{schemaName}> — model={model}\n[ReactAgent] System: {ForLog(reasoningSystemPrompt)}\n[ReactAgent] User: {ForLog(userMessage)}");
-
-            reasoningConversation.AppendUserInput(userMessage);
-
-            string response = await reasoningConversation.GetResponse(cancellationToken);
-
-            Debug.Log($"[ReactAgent] ReasonAsync<{schemaName}> raw response:\n{ForLog(response)}");
-
-            if (string.IsNullOrEmpty(response))
-            {
-                Debug.LogWarning("[ReactAgent] ReasonAsync received empty response from LLM.");
-                return default;
-            }
-
-            return DeserializeResponse<TResponse>(response);
-        }
-
-        /// <summary>
         /// Resets the conversation history.
         /// </summary>
         public void ResetConversation()
