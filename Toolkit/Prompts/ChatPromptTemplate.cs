@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using LlmTornado;
 using LlmTornado.Chat;
+using LlmTornado.Code;
 
 namespace UnityAI.Toolkit.Prompts
 {

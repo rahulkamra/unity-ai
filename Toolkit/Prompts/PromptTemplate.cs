@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using System.Linq;
+using FormatWith;
 
 namespace UnityAI.Toolkit.Prompts
 {
@@ -14,8 +15,6 @@ namespace UnityAI.Toolkit.Prompts
         private readonly string template;
         private readonly List<string> variables;
 
-        private static readonly Regex VariablePattern = new Regex(@"\{(\w+)\}", RegexOptions.Compiled);
-
         /// <summary>
         /// The raw template string with {variable} placeholders.
         /// </summary>
@@ -27,7 +26,7 @@ namespace UnityAI.Toolkit.Prompts
         public PromptTemplate(string template)
         {
             this.template = template ?? throw new ArgumentNullException(nameof(template));
-            variables = ExtractVariables(template);
+            variables = new List<string>(template.GetFormatParameters().Distinct());
         }
 
         /// <summary>
@@ -46,18 +45,7 @@ namespace UnityAI.Toolkit.Prompts
                 throw new ArgumentNullException(nameof(variables));
             }
 
-            string result = VariablePattern.Replace(template, (Match match) =>
-            {
-                string name = match.Groups[1].Value;
-                if (variables.TryGetValue(name, out string value))
-                {
-                    return value;
-                }
-
-                throw new ArgumentException($"Missing required variable: '{name}'");
-            });
-
-            return result;
+            return template.FormatWith(variables, MissingKeyBehaviour.ThrowException);
         }
 
         /// <summary>
@@ -71,18 +59,7 @@ namespace UnityAI.Toolkit.Prompts
                 throw new ArgumentNullException(nameof(variables));
             }
 
-            string result = VariablePattern.Replace(template, (Match match) =>
-            {
-                string name = match.Groups[1].Value;
-                if (variables.TryGetValue(name, out string value))
-                {
-                    return value;
-                }
-
-                return match.Value;
-            });
-
-            return new PromptTemplate(result);
+            return new PromptTemplate(template.FormatWith(variables, MissingKeyBehaviour.Ignore));
         }
 
         /// <summary>
@@ -107,23 +84,5 @@ namespace UnityAI.Toolkit.Prompts
         /// Returns the raw template string.
         /// </summary>
         public override string ToString() => template;
-
-        private static List<string> ExtractVariables(string template)
-        {
-            List<string> result = new List<string>();
-            HashSet<string> seen = new HashSet<string>();
-            MatchCollection matches = VariablePattern.Matches(template);
-
-            foreach (Match match in matches)
-            {
-                string name = match.Groups[1].Value;
-                if (seen.Add(name))
-                {
-                    result.Add(name);
-                }
-            }
-
-            return result;
-        }
     }
 }

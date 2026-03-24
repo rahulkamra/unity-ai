@@ -2,7 +2,8 @@
     "name": "UnityAI.Toolkit",
     "rootNamespace": "UnityAI.Toolkit",
     "references": [
-        "LlmTornado"
+        "LlmTornado",
+        "FormatWith"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
