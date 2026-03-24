@@ -3,25 +3,27 @@ using System.Collections.Generic;
 namespace UnityAI.Toolkit.Agents
 {
     /// <summary>
-    /// Response from an AI agent after processing a message, including any tool calls made.
+    /// Status of the agent's execution.
     /// </summary>
-    public class AgentResponse
+    public enum AgentStatus
     {
-        /// <summary>Final text output from the LLM after all tool calls are resolved.</summary>
-        public string Text { get; set; }
-
-        /// <summary>Log of all tool invocations made during this response.</summary>
-        public List<AgentToolCallRecord> ToolCalls { get; set; } = new List<AgentToolCallRecord>();
+        Success,
+        MaxIterationsReached,
+        Error
     }
 
     /// <summary>
-    /// Typed response from an AI agent where the final LLM output is structured JSON
+    /// Typed response from a ReactAgent where the final LLM output is
     /// deserialized into <typeparamref name="TResponse"/>.
+    /// For plain text responses, use <c>AgentResponse&lt;string&gt;</c>.
     /// </summary>
     public class AgentResponse<TResponse>
     {
-        /// <summary>Structured response deserialized from the LLM's final JSON output.</summary>
+        /// <summary>Structured response deserialized from the LLM's final output.</summary>
         public TResponse Response { get; set; }
+
+        /// <summary>Execution status of the agent run.</summary>
+        public AgentStatus Status { get; set; }
 
         /// <summary>Log of all tool invocations made during this response.</summary>
         public List<AgentToolCallRecord> ToolCalls { get; set; } = new List<AgentToolCallRecord>();
@@ -32,6 +34,9 @@ namespace UnityAI.Toolkit.Agents
     /// </summary>
     public class AgentToolCallRecord
     {
+        /// <summary>LLM reasoning text that preceded this tool call.</summary>
+        public string Thought { get; set; }
+
         /// <summary>Name of the tool that was called.</summary>
         public string ToolName { get; set; }
 
